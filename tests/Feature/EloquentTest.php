@@ -13,6 +13,13 @@ class EloquentTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function init(): void
+    {
+        $this->artisan('migrate');
+        $this->artisan('db:seed');
+    }
+
+
     // TASK: Make the model Morningnews work with DB table "morning_news"
     public function test_create_model_incorrect_table(): void
     {
@@ -34,15 +41,17 @@ class EloquentTest extends TestCase
         $response = $this->get('users');
 
         // This one should be filtered by "email_verified_at is not null"
-        $response->assertDontSee($user3->name);
+        $response->assertDontSeeText("/{$user3->name}/");
 
         // This one should be filtered out by "limit 3"
-        $response->assertDontSee($user1->name);
+        $response->assertDontSeeText("/{$user1->name}/");
 
         // Do we have the correct order?
-        $response->assertSee('1. ' . $user5->name);
-        $response->assertSee('2. ' . $user4->name);
-        $response->assertSee('3. ' . $user2->name); // not $user3
+        $response->assertSeeTextInOrder([
+             '1. ' . $user5->name,
+             '2. ' . $user4->name,
+             '3. ' . $user2->name,
+        ]);
     }
 
     public function test_find_user_or_show_404_page(): void
